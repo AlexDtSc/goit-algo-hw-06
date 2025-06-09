@@ -1,5 +1,5 @@
 # goit-algo-hw-06
-Homework. Topic 6. "Graphs". Course "Basic Algorithms and Data Structures". 
+Homework. Topic 6. "Graphs". Course "Basic Algorithms and Data Structures"
 
 # Опис Завдання 2
 У цьому завданні реалізовано два пошукові алгоритми — глибини (DFS) та ширини (BFS) — для графа, створеного в Завданні 1. 
