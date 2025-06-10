@@ -85,15 +85,53 @@ plt.show()
 Висновки оформлено у вигляді файлу readme.md домашнього завдання.
 '''
 
-# DFS
-dfs_tree = nx.dfs_tree(G, source='A')
-dfs_tree_search_way = list(dfs_tree.edges()) 
-print(f'DFS_tree search way \n {dfs_tree_search_way}')  # виведе ребра DFS-дерева з коренем у вузлі A
+## DFS
+def dfs_recursive(graph, vertex, visited=None):
+    if visited is None:
+        visited = set()
+    visited.add(vertex)
+    print(vertex, end=' ')  # Відвідуємо вершину
+    for neighbor in graph[vertex]:
+        if neighbor not in visited:
+            dfs_recursive(graph, neighbor, visited)
 
-# BFS
-bfs_tree = nx.bfs_tree(G, source='A')
-bfs_tree_search_way = list(bfs_tree.edges())
-print(f'BFS_tree search way \n {bfs_tree_search_way}')  # виведе ребра BFS-дерева з коренем у вузлі A
+# Виклик функції DFS
+print(f'\nDFS_tree search way')  # виведе ребра DFS-дерева з коренем у вузлі A
+dfs_recursive(graph, 'A')
+print(f'\n')
+
+
+
+
+## BFS
+from collections import deque
+
+def bfs_recursive(graph, queue, visited=None):
+    # Перевіряємо, чи існує множина відвіданих вершин, якщо ні, то ініціалізуємо нову
+    if visited is None:
+        visited = set()
+    # Якщо черга порожня, завершуємо рекурсію
+    if not queue:
+        return
+    # Вилучаємо вершину з початку черги
+    vertex = queue.popleft()
+    # Перевіряємо, чи відвідували раніше дану вершину
+    if vertex not in visited:
+        # Якщо не відвідували, друкуємо вершину
+        print(vertex, end=" ")
+        # Додаємо вершину до множини відвіданих вершин.
+        visited.add(vertex)
+        # Додаємо невідвіданих сусідів даної вершини в кінець черги.
+        queue.extend(set(graph[vertex]) - visited)
+    # Рекурсивний виклик функції з тією ж чергою та множиною відвіданих вершин
+    bfs_recursive(graph, queue, visited)
+
+
+# Запуск рекурсивного алгоритму BFS
+print(f'BFS_tree search way')  # виведе ребра BFS-дерева з коренем у вузлі A
+bfs_tree = bfs_recursive(graph, deque(["A"]))
+print(f'\n')
+
 
 
 # У цьому завданні реалізовано два пошукові алгоритми — глибини (DFS) та ширини (BFS) — для графа, створеного в Завданні 1. 
@@ -136,12 +174,64 @@ G['F']['I']['weight'] = 4
 G['F']['G']['weight'] = 1
 
 
-# Застосування алгоритму Дейкстри
-shortest_paths = nx.single_source_dijkstra_path(G, source='A')
-shortest_path_lengths = nx.single_source_dijkstra_path_length(G, source='A')
+# Автоматично створюємо словникову структуру графа G з вагами для алгоритму Дейкстри, адже помилка виникає через те, що у твоєму графі graph = { 'A': ['B', 'C'], ... } — значення кожної вершини є списком сусідів, 
+# а не словником, який зберігає ваги ребер. Але алгоритм Дейкстри очікує, що кожне значення буде у форматі: 'A': {'B': 1, 'C': 2}
+# ❌ Поточна структура: {'A': ['B', 'C']} — не підходить
+# ✅ Потрібна структура: {'A': {'B': 1, 'C': 2}}
 
-print(f'Найкоротші шляхи від вузла \'A\' до всіх інших вузлів: {shortest_paths}')                 # виведе найкоротші шляхи від вузла 'A' до всіх інших вузлів
-print(f'Довжини найкоротших шляхів від вузла \'A\' до всіх інших вузлів{shortest_path_lengths}')  # виведе довжини найкоротших шляхів від вузла 'A' до всіх інших вузлів
+
+graph_with_weights = {
+    node: {neighbor: data['weight'] for neighbor, data in G[node].items()} # для кожної вершини графа G - вивести словник в якому ключем буде ця ж вершина, а значеннями буде cловник вершин-сусідів з відстанню (вага) від цієї вершини до цих вершин-сусідів
+    for node in G.nodes   # для кожної вершини графа G
+}
+
+''' 
+Або можна таким чином переписати наш попередній граф G вручну, з доданими вагами
+
+graph_with_weights = {                            
+    'A': {'B': 1, 'C': 2},
+    'B': {'A': 1, 'D': 3, 'E': 4},
+    'C': {'A': 2, 'F': 5, 'G': 1},
+    'D': {'B': 3, 'E': 2},
+    'E': {'B': 4, 'H': 3},
+    'F': {'C': 5, 'I': 4, 'G': 1},
+    'G': {'C': 1, 'F': 1},
+    'H': {'E': 3},
+    'I': {'F': 4}
+}
+'''
+
+# Застосування алгоритму Дейкстри
+def dijkstra(graph, start):
+    # Ініціалізація відстаней та множини невідвіданих вершин
+    distances = {vertex: float('infinity') for vertex in graph}
+    distances[start] = 0
+    unvisited = list(graph.keys())
+
+    while unvisited:
+        # Знаходження вершини з найменшою відстанню серед невідвіданих
+        current_vertex = min(unvisited, key=lambda vertex: distances[vertex])
+
+        # Якщо поточна відстань є нескінченністю, то ми завершили роботу
+        if distances[current_vertex] == float('infinity'):
+            break
+
+        for neighbor, weight in graph[current_vertex].items():
+            distance = distances[current_vertex] + weight
+
+            # Якщо нова відстань коротша, то оновлюємо найкоротший шлях
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+
+        # Видаляємо поточну вершину з множини невідвіданих
+        unvisited.remove(current_vertex)
+
+    return distances
+
+
+# Виклик функції для вершини A
+dijkstra_shortest_paths = dijkstra(graph_with_weights, 'A') 
+print(f'Найкоротші шляхи від вузла \'A\' до всіх інших вузлів: {dijkstra_shortest_paths}')
 
 
 # Візуалізація графа завдання 3
